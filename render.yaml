@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: gyaanshelf
+    env: python
+    plan: free
+    region: oregon
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn gyan.app:app --bind 0.0.0.0:$PORT"
+    # specify environment variables below or configure them in the Render dashboard
+    envVars:
+      - key: SECRET_KEY
+        value: "your-secret-key"
+      - key: MYSQL_HOST
+        value: "localhost"
+      - key: MYSQL_USER
+        value: "root"
+      - key: MYSQL_PASSWORD
+        value: "astha123"
+      - key: MYSQL_DB
+        value: "gyaanshelf"
+      - key: UPLOAD_FOLDER
+        value: "static/uploads"
