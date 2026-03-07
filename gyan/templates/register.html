@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+
+{% block title %}Register - GyaanShelf{% endblock %}
+
+{% block content %}
+<div class="min-h-[calc(100vh-80px)] flex flex-col">
+    
+    <div class="absolute top-0 left-0 w-96 h-96 bg-accent/5 rounded-full blur-[150px] -z-10"></div>
+    <div class="absolute bottom-0 right-0 w-96 h-96 bg-accent/5 rounded-full blur-[150px] -z-10"></div>
+
+    
+    <div class="flex-grow flex flex-col lg:flex-row items-stretch">
+        
+        <div class="lg:w-1/2 bg-gradient-to-br from-bg-card/40 to-bg-deep/40 border-r border-border p-8 lg:p-16 flex flex-col justify-between py-12">
+            <div class="space-y-10">
+                
+                <div class="space-y-6">
+                    <h1 class="text-5xl lg:text-6xl font-bold serif-title leading-tight">
+                        Join Our <span class="text-accent italic">Reading</span> Community
+                    </h1>
+                    <p class="text-lg text-text-muted leading-relaxed max-w-md">
+                        Discover a world of pre-loved books, connect with fellow readers, and give books a second home.
+                    </p>
+                </div>
+
+                
+                <div class="space-y-5">
+                    <div class="flex items-start gap-4">
+                        <div class="w-10 h-10 bg-accent/10 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+                            <i data-lucide="book-open" class="w-5 h-5 text-accent"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-text-main mb-1">Curated Collections</h4>
+                            <p class="text-sm text-text-muted">Access thousands of books across all genres</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start gap-4">
+                        <div class="w-10 h-10 bg-accent/10 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+                            <i data-lucide="users" class="w-5 h-5 text-accent"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-text-main mb-1">Community Driven</h4>
+                            <p class="text-sm text-text-muted">Connect with readers who share your passion</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start gap-4">
+                        <div class="w-10 h-10 bg-accent/10 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+                            <i data-lucide="leaf" class="w-5 h-5 text-accent"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-text-main mb-1">Sustainable Reading</h4>
+                            <p class="text-sm text-text-muted">Extend the life of books and reduce waste</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start gap-4">
+                        <div class="w-10 h-10 bg-accent/10 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+                            <i data-lucide="wallet" class="w-5 h-5 text-accent"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-text-main mb-1">Earn & Save</h4>
+                            <p class="text-sm text-text-muted">Sell your books and save on reading costs</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            
+            <div class="mt-8 pt-8 border-t border-border/50">
+                <p class="text-lg serif-title italic text-text-main/80 leading-relaxed mb-3">
+                    "A reader lives a thousand lives before he dies."
+                </p>
+                <p class="text-[10px] uppercase tracking-[0.2em] font-bold text-accent">— George R.R. Martin</p>
+            </div>
+        </div>
+
+        
+        <div class="lg:w-1/2 flex items-center justify-center p-8 lg:p-16 py-16">
+            <div class="w-full max-w-lg">
+                
+                <div class="text-center mb-10">
+                    <h2 class="text-4xl font-bold serif-title mb-3">Create Account</h2>
+                    <p class="text-text-muted text-sm">Join GyaanShelf and start your reading journey</p>
+                </div>
+
+                
+                <form method="POST" class="space-y-5">
+                    
+                    <div class="space-y-2">
+                        <label class="text-[10px] uppercase font-black tracking-widest text-text-muted block">Full Name</label>
+                        <div class="relative">
+                            <i data-lucide="user" class="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted w-4 h-4"></i>
+                            <input 
+                                type="text" 
+                                name="fullName"
+                                placeholder="John Fitzgerald" 
+                                class="w-full pl-12 pr-4 py-4 rounded-2xl input-premium transition-all focus:scale-[1.02]" 
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    
+                    <div class="space-y-2">
+                        <label class="text-[10px] uppercase font-black tracking-widest text-text-muted block">Email Address</label>
+                        <div class="relative">
+                            <i data-lucide="mail" class="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted w-4 h-4"></i>
+                            <input 
+                                type="email" 
+                                name="email"
+                                placeholder="you@example.com" 
+                                class="w-full pl-12 pr-4 py-4 rounded-2xl input-premium transition-all focus:scale-[1.02]" 
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    
+                    <div class="space-y-2">
+                        <label class="text-[10px] uppercase font-black tracking-widest text-text-muted block">Phone Number</label>
+                        <div class="relative">
+                            <i data-lucide="phone" class="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted w-4 h-4"></i>
+                            <input 
+                                type="tel" 
+                                name="phone"
+                                placeholder="+91 98765 43210" 
+                                class="w-full pl-12 pr-4 py-4 rounded-2xl input-premium transition-all focus:scale-[1.02]" 
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    
+                    <div class="space-y-2">
+                        <label class="text-[10px] uppercase font-black tracking-widest text-text-muted block">Location/City</label>
+                        <div class="relative">
+                            <i data-lucide="map-pin" class="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted w-4 h-4"></i>
+                            <input 
+                                type="text" 
+                                name="location"
+                                placeholder="Mumbai, India" 
+                                class="w-full pl-12 pr-4 py-4 rounded-2xl input-premium transition-all focus:scale-[1.02]" 
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    
+                    <div class="flex items-center gap-4 py-2">
+                        <div class="flex-grow h-[1px] bg-border"></div>
+                        <span class="text-[10px] uppercase font-black tracking-widest text-text-muted">Security</span>
+                        <div class="flex-grow h-[1px] bg-border"></div>
+                    </div>
+
+                    
+                    <div class="space-y-2">
+                        <label class="text-[10px] uppercase font-black tracking-widest text-text-muted block">Password</label>
+                        <div class="relative">
+                            <i data-lucide="lock" class="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted w-4 h-4"></i>
+                            <input 
+                                type="password" 
+                                name="password"
+                                placeholder="Create a strong password" 
+                                class="w-full pl-12 pr-4 py-4 rounded-2xl input-premium transition-all focus:scale-[1.02]" 
+                                required
+                            >
+                        </div>
+                        <p class="text-[9px] text-text-muted mt-2">At least 8 characters with a mix of letters and numbers</p>
+                    </div>
+
+                    
+                    <div class="space-y-2">
+                        <label class="text-[10px] uppercase font-black tracking-widest text-text-muted block">Confirm Password</label>
+                        <div class="relative">
+                            <i data-lucide="check-circle" class="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted w-4 h-4"></i>
+                            <input 
+                                type="password" 
+                                name="confirmPassword"
+                                placeholder="Confirm your password" 
+                                class="w-full pl-12 pr-4 py-4 rounded-2xl input-premium transition-all focus:scale-[1.02]" 
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    
+                    <div class="flex items-start gap-3 pt-2">
+                        <input 
+                            type="checkbox" 
+                            name="terms"
+                            id="terms"
+                            class="w-5 h-5 rounded-lg bg-bg-deep border border-border text-accent cursor-pointer mt-1" 
+                            required
+                        >
+                        <label for="terms" class="text-xs text-text-muted cursor-pointer leading-relaxed">
+                            I agree to the Terms of Service and Privacy Policy
+                        </label>
+                    </div>
+
+                    
+                    <div class="flex items-start gap-3">
+                        <input 
+                            type="checkbox" 
+                            name="newsletter"
+                            id="newsletter"
+                            class="w-5 h-5 rounded-lg bg-bg-deep border border-border text-accent cursor-pointer mt-1" 
+                        >
+                        <label for="newsletter" class="text-xs text-text-muted cursor-pointer">
+                            Send me book recommendations and exclusive offers
+                        </label>
+                    </div>
+
+                    
+                    <button 
+                        type="submit" 
+                        class="btn-gold w-full py-4 rounded-2xl uppercase tracking-[0.15em] text-xs font-bold shadow-lg hover:shadow-xl mt-8 transition-all duration-300 flex items-center justify-center gap-2"
+                    >
+                        <i data-lucide="user-plus" class="w-4 h-4"></i>
+                        Create Account
+                    </button>
+
+                    
+                    <p class="text-center text-xs text-text-muted pt-4">
+                        Already have an account? 
+                        <a href="{{ url_for('login') }}" class="text-accent cursor-pointer hover:text-accent/80 font-bold transition-colors">
+                            Sign In Here
+                        </a>
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

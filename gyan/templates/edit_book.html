@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Book - GyaanShelf{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-8 py-12">
+    <div class="max-w-4xl mx-auto">
+        <a href="{{ url_for('dashboard') }}" class="text-accent hover:text-accent/80 transition-colors flex items-center gap-2 mb-8">
+            <i data-lucide="chevron-left" class="w-4 h-4"></i> Back to Dashboard
+        </a>
+
+        <div class="mb-12">
+            <h1 class="text-5xl font-bold serif-title mb-4">Edit Book Listing</h1>
+            <p class="text-lg text-text-muted">Update your book details</p>
+        </div>
+
+        <form method="POST" enctype="multipart/form-data" class="bg-card rounded-[2rem] p-12 border border-border">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                
+                <div class="space-y-6">
+                    <h2 class="text-2xl font-bold serif-title flex items-center gap-3 mb-8">
+                        <i data-lucide="book-open" class="w-6 h-6 text-accent"></i> Book Information
+                    </h2>
+
+                    
+                    <div class="space-y-2">
+                        <label class="text-xs uppercase font-black tracking-widest text-text-muted block">Book Title</label>
+                        <input type="text" name="title" value="{{ book.title }}" class="w-full px-4 py-4 rounded-2xl input-premium" required>
+                    </div>
+
+                    
+                    <div class="space-y-2">
+                        <label class="text-xs uppercase font-black tracking-widest text-text-muted block">Author</label>
+                        <input type="text" name="author" value="{{ book.author }}" class="w-full px-4 py-4 rounded-2xl input-premium" required>
+                    </div>
+
+                    
+                    <div class="space-y-2">
+                        <label class="text-xs uppercase font-black tracking-widest text-text-muted block">Category</label>
+                        <select name="category" class="w-full px-4 py-4 rounded-2xl input-premium appearance-none cursor-pointer" required>
+                            <option value="Fiction" {% if book.category == 'Fiction' %}selected{% endif %}>Fiction</option>
+                            <option value="Non-Fiction" {% if book.category == 'Non-Fiction' %}selected{% endif %}>Non-Fiction</option>
+                            <option value="Science" {% if book.category == 'Science' %}selected{% endif %}>Science</option>
+                            <option value="History" {% if book.category == 'History' %}selected{% endif %}>History</option>
+                            <option value="Biography" {% if book.category == 'Biography' %}selected{% endif %}>Biography</option>
+                            <option value="Mystery" {% if book.category == 'Mystery' %}selected{% endif %}>Mystery & Thriller</option>
+                            <option value="Romance" {% if book.category == 'Romance' %}selected{% endif %}>Romance</option>
+                            <option value="Self-Help" {% if book.category == 'Self-Help' %}selected{% endif %}>Self-Help</option>
+                            <option value="Technology" {% if book.category == 'Technology' %}selected{% endif %}>Technology</option>
+                            <option value="Children" {% if book.category == 'Children' %}selected{% endif %}>Children</option>
+                            <option value="Comics" {% if book.category == 'Comics' %}selected{% endif %}>Comics & Graphic Novels</option>
+                            <option value="Other" {% if book.category == 'Other' %}selected{% endif %}>Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                
+                <div class="space-y-6">
+                    <h2 class="text-2xl font-bold serif-title flex items-center gap-3 mb-8">
+                        <i data-lucide="tag" class="w-6 h-6 text-accent"></i> Pricing & Status
+                    </h2>
+
+                    
+                    <div class="space-y-2">
+                        <label class="text-xs uppercase font-black tracking-widest text-text-muted block">Price (₹)</label>
+                        <input type="number" name="price" value="{{ book.price }}" min="1" step="0.01" class="w-full px-4 py-4 rounded-2xl input-premium" required>
+                    </div>
+
+                    
+                    <div class="space-y-2">
+                        <label class="text-xs uppercase font-black tracking-widest text-text-muted block">Condition</label>
+                        <select name="condition" class="w-full px-4 py-4 rounded-2xl input-premium appearance-none cursor-pointer" required>
+                            <option value="Like New" {% if book.condition == 'Like New' %}selected{% endif %}>Like New</option>
+                            <option value="Good" {% if book.condition == 'Good' %}selected{% endif %}>Good</option>
+                            <option value="Fair" {% if book.condition == 'Fair' %}selected{% endif %}>Fair</option>
+                            <option value="Worn" {% if book.condition == 'Worn' %}selected{% endif %}>Worn</option>
+                        </select>
+                    </div>
+
+                    
+                    <div class="space-y-2">
+                        <label class="text-xs uppercase font-black tracking-widest text-text-muted block">Status</label>
+                        <select name="status" class="w-full px-4 py-4 rounded-2xl input-premium appearance-none cursor-pointer" required>
+                            <option value="Available" {% if book.status == 'Available' %}selected{% endif %}>Available</option>
+                            <option value="Sold" {% if book.status == 'Sold' %}selected{% endif %}>Sold</option>
+                            <option value="Inactive" {% if book.status == 'Inactive' %}selected{% endif %}>Inactive</option>
+                        </select>
+                    </div>
+
+                    
+                    <div class="space-y-2">
+                        <label class="text-xs uppercase font-black tracking-widest text-text-muted block">Update Book Cover Image</label>
+                        {% if book.book_image %}
+                        <div class="mb-3">
+                            <img src="{{ url_for('static', filename='uploads/' + book.book_image) }}" alt="Current" class="w-full h-32 object-cover rounded-xl">
+                        </div>
+                        {% endif %}
+                        <div class="relative border-2 border-dashed border-border rounded-2xl p-6 text-center hover:border-accent transition-colors cursor-pointer" onclick="document.getElementById('book_image').click()">
+                            <i data-lucide="upload-cloud" class="w-8 h-8 text-text-muted mx-auto mb-2"></i>
+                            <p class="text-sm text-text-muted">Click to change image</p>
+                            <input type="file" id="book_image" name="book_image" accept="image/*" class="hidden">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            
+            <div class="mt-8 space-y-2">
+                <h2 class="text-2xl font-bold serif-title flex items-center gap-3 mb-4">
+                    <i data-lucide="align-left" class="w-6 h-6 text-accent"></i> Description
+                </h2>
+                <textarea name="description" class="w-full px-4 py-4 rounded-2xl input-premium min-h-32 resize-none">{{ book.description or '' }}</textarea>
+            </div>
+
+            
+            <div class="mt-12 flex gap-4">
+                <button type="submit" class="btn-gold flex-grow py-5 rounded-2xl font-bold uppercase tracking-widest text-sm flex items-center justify-center gap-2">
+                    <i data-lucide="check-circle" class="w-5 h-5"></i> Update Book
+                </button>
+                <a href="{{ url_for('dashboard') }}" class="px-8 py-5 rounded-2xl bg-white/5 border border-border hover:bg-white/10 font-bold uppercase tracking-widest text-sm transition-all flex items-center gap-2 no-underline">
+                    <i data-lucide="x-circle" class="w-5 h-5"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.getElementById('book_image').addEventListener('change', function(e) {
+        if (e.target.files.length > 0) {
+            const fileName = e.target.files[0].name;
+            const parent = e.target.parentElement;
+            parent.innerHTML = `<i data-lucide="check-circle" class="w-8 h-8 text-accent mx-auto mb-2"></i><p class="text-sm text-accent font-bold">✓ ${fileName}</p>`;
+            lucide.createIcons();
+        }
+    });
+</script>
+{% endblock %}

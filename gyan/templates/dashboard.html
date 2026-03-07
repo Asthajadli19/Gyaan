@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - GyaanShelf{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-8 py-12">
+    
+    <div class="mb-16">
+        <h1 class="text-5xl font-bold serif-title mb-2">Welcome, {{ current_user.full_name }}!</h1>
+        <p class="text-lg text-text-muted">Manage your books and account settings</p>
+    </div>
+
+    
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-16">
+        <div class="bg-card border border-border rounded-[2rem] p-8 text-center">
+            <p class="text-xs uppercase font-black text-text-muted mb-2 tracking-widest">Total Books</p>
+            <p class="text-4xl font-bold">{{ stats.total_books or 0 }}</p>
+        </div>
+        <div class="bg-card border border-border rounded-[2rem] p-8 text-center">
+            <p class="text-xs uppercase font-black text-text-muted mb-2 tracking-widest">Available</p>
+            <p class="text-4xl font-bold text-accent">{{ stats.available_books or 0 }}</p>
+        </div>
+        <div class="bg-card border border-border rounded-[2rem] p-8 text-center">
+            <p class="text-xs uppercase font-black text-text-muted mb-2 tracking-widest">Sold</p>
+            <p class="text-4xl font-bold text-green-400">{{ stats.sold_books or 0 }}</p>
+        </div>
+        <div class="bg-card border border-border rounded-[2rem] p-8 text-center">
+            <a href="{{ url_for('profile') }}" class="block hover:opacity-80 transition-opacity">
+                <p class="text-xs uppercase font-black text-text-muted mb-2 tracking-widest">Profile</p>
+                <p class="text-2xl font-bold text-accent">→</p>
+            </a>
+        </div>
+    </div>
+
+    
+    <div class="flex gap-4 mb-16">
+        <a href="{{ url_for('sell_book') }}" class="btn-gold px-8 py-4 rounded-2xl font-bold uppercase tracking-widest text-sm flex items-center gap-2">
+            <i data-lucide="plus-circle" class="w-5 h-5"></i> List New Book
+        </a>
+        <a href="{{ url_for('browse_books') }}" class="px-8 py-4 rounded-2xl bg-white/5 border border-border hover:bg-white/10 font-bold uppercase tracking-widest text-sm transition-all flex items-center gap-2 no-underline">
+            <i data-lucide="shopping-cart" class="w-5 h-5"></i> Browse More Books
+        </a>
+    </div>
+
+    
+    <div>
+        <h2 class="text-3xl font-bold serif-title mb-8">Your Books</h2>
+        
+        {% if books %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {% for book in books %}
+            <div class="book-card rounded-[2rem] overflow-hidden border border-border hover:shadow-2xl transition-all">
+                {% if book.book_image %}
+                <img src="{{ url_for('static', filename='uploads/' + book.book_image) }}" alt="{{ book.title }}" class="w-full h-48 object-cover">
+                {% else %}
+                <div class="w-full h-48 bg-bg-deep flex items-center justify-center">
+                    <i data-lucide="book" class="w-12 h-12 text-text-muted/30"></i>
+                </div>
+                {% endif %}
+                
+                <div class="p-6">
+                    <div class="mb-4">
+                        <h3 class="text-lg font-bold serif-title line-clamp-2 mb-1">{{ book.title }}</h3>
+                        <p class="text-sm text-text-muted">by {{ book.author }}</p>
+                    </div>
+
+                    <div class="space-y-3 mb-6">
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-text-muted">Price</span>
+                            <span class="text-accent font-bold">₹{{ "%.2f"|format(book.price) }}</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-text-muted">Condition</span>
+                            <span>{{ book.condition }}</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-text-muted">Status</span>
+                            <span class="px-3 py-1 rounded-full text-xs font-bold {% if book.status == 'Available' %}bg-green-500/20 text-green-400{% elif book.status == 'Sold' %}bg-red-500/20 text-red-400{% else %}bg-gray-500/20 text-gray-400{% endif %}">
+                                {{ book.status }}
+                            </span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-text-muted">Views</span>
+                            <span>{{ book.views }}</span>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <a href="{{ url_for('edit_book', book_id=book.id) }}" class="flex-1 py-3 rounded-xl bg-white/5 border border-border hover:bg-white/10 font-bold uppercase text-[10px] transition-all flex items-center justify-center gap-1 no-underline">
+                            <i data-lucide="edit" class="w-4 h-4"></i> Edit
+                        </a>
+                        <form method="POST" action="{{ url_for('delete_book', book_id=book.id) }}" onsubmit="return confirm('Are you sure?');" class="flex-1">
+                            <button type="submit" class="w-full py-3 rounded-xl bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 text-red-400 font-bold uppercase text-[10px] transition-all flex items-center justify-center gap-1">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i> Delete
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-20 bg-card rounded-[2rem] border border-border">
+            <i data-lucide="inbox" class="w-16 h-16 text-text-muted/30 mx-auto mb-4"></i>
+            <h3 class="text-2xl font-bold serif-title mb-2">No Books Listed Yet</h3>
+            <p class="text-text-muted mb-6">Start selling your books to build your presence on GyaanShelf</p>
+            <a href="{{ url_for('sell_book') }}" class="btn-gold px-8 py-3 rounded-xl inline-block">List Your First Book</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

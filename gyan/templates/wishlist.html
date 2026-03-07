@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Wishlist - GyaanShelf{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-8 py-12">
+    <div class="mb-12">
+        <h1 class="text-5xl font-bold serif-title mb-4">Your Wishlist</h1>
+        <p class="text-lg text-text-muted">Books you've saved for later</p>
+    </div>
+
+    {% if books %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        {% for book in books %}
+        <a href="{{ url_for('book_detail', book_id=book.id) }}" class="book-card rounded-[2rem] overflow-hidden p-6 text-center no-underline group relative">
+            <button onclick="removeFromWishlist({{ book.id }}, event)" class="absolute top-4 right-4 z-10 w-10 h-10 bg-red-500 rounded-full flex items-center justify-center hover:bg-red-600 transition-colors">
+                <i data-lucide="x" class="w-5 h-5 text-white"></i>
+            </button>
+            
+            {% if book.book_image %}
+            <img src="{{ url_for('static', filename='uploads/' + book.book_image) }}" class="w-full h-64 object-cover rounded-2xl mb-4 group-hover:scale-105 transition-transform">
+            {% else %}
+            <div class="w-full h-64 bg-bg-deep rounded-2xl mb-4 flex items-center justify-center">
+                <i data-lucide="book" class="w-12 h-12 text-text-muted/50"></i>
+            </div>
+            {% endif %}
+            
+            <h3 class="text-lg font-bold serif-title line-clamp-2 mb-1">{{ book.title }}</h3>
+            <p class="text-xs text-text-muted mb-3">by {{ book.author }}</p>
+            <p class="text-accent font-black text-lg">₹{{ "%.2f"|format(book.price) }}</p>
+            <button class="w-full mt-4 py-3 rounded-xl border border-accent text-accent uppercase text-[10px] font-bold hover:bg-accent hover:text-bg-deep transition-all">View Details</button>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-20 bg-card rounded-[2rem] border border-border">
+        <i data-lucide="heart" class="w-16 h-16 text-text-muted/30 mx-auto mb-4"></i>
+        <h3 class="text-2xl font-bold serif-title mb-2">Your Wishlist is Empty</h3>
+        <p class="text-text-muted mb-6">Start adding books to your wishlist for quick access</p>
+        <a href="{{ url_for('browse_books') }}" class="btn-gold px-8 py-3 rounded-xl inline-block">Browse Books</a>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function removeFromWishlist(bookId, event) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    fetch(`/wishlist/remove/${bookId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                location.reload();
+            }
+        });
+}
+</script>
+{% endblock %}
