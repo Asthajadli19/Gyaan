@@ -6,7 +6,7 @@
 <div class="container mx-auto px-8 py-12">
     
     <div class="mb-16">
-        <h1 class="text-5xl font-bold serif-title mb-2">Welcome, {{ current_user.full_name }}!</h1>
+        <h1 class="text-5xl font-bold serif-title mb-2">Welcome, {% if current_user %}{{ current_user.full_name }}{% else %}User{% endif %}!</h1>
         <p class="text-lg text-text-muted">Manage your books and account settings</p>
     </div>
 

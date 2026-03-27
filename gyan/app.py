@@ -34,6 +34,71 @@ app.config['MAX_CONTENT_LENGTH'] = int(os.environ.get('MAX_CONTENT_LENGTH', 16 *
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
 
+def log_db_tables():
+    """Log tables for debug / dev checks (based on test_db.py)"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('SHOW TABLES')
+        tables = cursor.fetchall()
+        table_names = [list(row.values())[0] for row in tables]
+        app.logger.info('DB Tables: %s', table_names)
+        if 'messages' in table_names:
+            app.logger.info('Messages table exists')
+        else:
+            app.logger.warning('Messages table does not exist')
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        app.logger.error('DB log tables error: %s', e)
+
+
+def ensure_messages_table():
+    """Ensure the messages table exists (based on check_db.py)"""
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('SHOW TABLES')
+        tables = cursor.fetchall()
+        table_names = [list(row.values())[0] for row in tables]
+
+        if 'messages' not in table_names:
+            app.logger.warning('Messages table missing - creating...')
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS messages (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    sender_id INT NOT NULL,
+                    receiver_id INT NOT NULL,
+                    book_id INT,
+                    message TEXT NOT NULL,
+                    sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    is_read BOOLEAN DEFAULT FALSE,
+                    FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+                    FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE,
+                    FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE,
+                    INDEX idx_sender_id (sender_id),
+                    INDEX idx_receiver_id (receiver_id),
+                    INDEX idx_book_id (book_id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ''')
+            conn.commit()
+            app.logger.info('Messages table created')
+        else:
+            app.logger.info('Messages table already exists')
+
+        cursor.close()
+    except Exception as e:
+        app.logger.error('Error ensuring messages table: %s', e)
+    finally:
+        if conn:
+            conn.close()
+
+
+def startup_table_checks():
+    """Run DB check functions once at app startup."""
+    log_db_tables()
+    ensure_messages_table()
 
 
 def get_db_connection():
@@ -47,12 +112,31 @@ def get_db_connection():
     )
 
 
+# Run startup DB checks
+with app.app_context():
+    startup_table_checks()
+
+
+@app.context_processor
+def inject_current_user():
+    """Make current_user available in all templates"""
+    user_id = session.get('user_id')
+    if user_id:
+        try:
+            user = get_user_data(user_id)
+            return {'current_user': user}
+        except:
+            return {'current_user': None}
+    return {'current_user': None}
+
+
 
 
 
 def allowed_file(filename):
     """Check if file extension is allowed"""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 
 def validate_email(email):
     """Validate email format"""
@@ -302,21 +386,26 @@ def login():
             flash('Email and password are required!', 'danger')
             return redirect(url_for('login'))
 
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute('SELECT * FROM users WHERE email = %s AND is_active = TRUE', (email,))
-        user = cursor.fetchone()
-        cursor.close()
-        conn.close()
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM users WHERE email = %s AND is_active = TRUE', (email,))
+            user = cursor.fetchone()
+            cursor.close()
+            conn.close()
 
-        if user and check_password_hash(user['password_hash'], password):
-            session['user_id'] = user['id']
-            session['full_name'] = user['full_name']
-            session['email'] = user['email']
-            flash(f'Welcome back, {user["full_name"]}!', 'success')
-            return redirect(url_for('dashboard'))
-        else:
-            flash('Invalid email or password!', 'danger')
+            if user and check_password_hash(user['password_hash'], password):
+                session['user_id'] = user['id']
+                session['full_name'] = user['full_name']
+                session['email'] = user['email']
+                flash(f'Welcome back, {user["full_name"]}!', 'success')
+                return redirect(url_for('dashboard'))
+            else:
+                flash('Invalid email or password!', 'danger')
+                return redirect(url_for('login'))
+        except Exception as e:
+            print(f"Login error: {e}")
+            flash('An error occurred during login. Please try again.', 'danger')
             return redirect(url_for('login'))
 
     return render_template('login.html')
@@ -341,27 +430,33 @@ def dashboard():
     conn = get_db_connection()
     cursor = conn.cursor()
 
+    try:
+        user = get_user_data(user_id)
 
-    user = get_user_data(user_id)
+        cursor.execute('''
+            SELECT * FROM books WHERE user_id = %s ORDER BY created_at DESC
+        ''', (user_id,))
+        user_books = cursor.fetchall()
 
-
-    cursor.execute('''
-        SELECT * FROM books WHERE user_id = %s ORDER BY created_at DESC
-    ''', (user_id,))
-    user_books = cursor.fetchall()
-
-
-    cursor.execute('''
-        SELECT
-            COUNT(*) as total_books,
-            SUM(CASE WHEN status = "Available" THEN 1 ELSE 0 END) as available_books,
-            SUM(CASE WHEN status = "Sold" THEN 1 ELSE 0 END) as sold_books
-        FROM books WHERE user_id = %s
-    ''', (user_id,))
-    stats = cursor.fetchone()
-
-    cursor.close()
-    conn.close()
+        cursor.execute('''
+            SELECT
+                COUNT(*) as total_books,
+                COALESCE(SUM(CASE WHEN status = "Available" THEN 1 ELSE 0 END), 0) as available_books,
+                COALESCE(SUM(CASE WHEN status = "Sold" THEN 1 ELSE 0 END), 0) as sold_books
+            FROM books WHERE user_id = %s
+        ''', (user_id,))
+        stats = cursor.fetchone()
+        
+        # Ensure stats is not None
+        if not stats:
+            stats = {'total_books': 0, 'available_books': 0, 'sold_books': 0}
+    except Exception as e:
+        print(f"Dashboard error: {e}")
+        user_books = []
+        stats = {'total_books': 0, 'available_books': 0, 'sold_books': 0}
+    finally:
+        cursor.close()
+        conn.close()
 
     return render_template('dashboard.html', user=user, books=user_books, stats=stats)
 
@@ -370,7 +465,11 @@ def dashboard():
 def profile():
     """User profile page"""
     user_id = session.get('user_id')
-    user = get_user_data(user_id)
+    try:
+        user = get_user_data(user_id)
+    except Exception as e:
+        print(f"Profile error: {e}")
+        user = None
     return render_template('profile.html', user=user)
 
 @app.route('/profile/update', methods=['POST'])
@@ -456,7 +555,7 @@ def sell_book():
             cursor = conn.cursor()
             cursor.execute('''
                 INSERT INTO books (user_id, title, author, isbn, category, description, price,
-                                 book_condition, publication_year, pages, language)
+                                 `condition`, publication_year, pages, language)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ''', (user_id, title, author, isbn, category, description, price, condition,
                   publication_year if publication_year else None, pages if pages else None, language))
@@ -481,6 +580,9 @@ def sell_book():
             return redirect(url_for('dashboard'))
 
         except Exception as e:
+            conn.rollback()
+            cursor.close()
+            conn.close()
             flash(f'Error listing book: {str(e)}', 'danger')
             return redirect(url_for('sell_book'))
 
@@ -492,7 +594,7 @@ def edit_book(book_id):
     """Edit book listing"""
     user_id = session.get('user_id')
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor()
 
 
     cursor.execute('SELECT * FROM books WHERE id = %s AND user_id = %s', (book_id, user_id))
@@ -530,7 +632,7 @@ def edit_book(book_id):
             cursor = conn.cursor()
             cursor.execute('''
                 UPDATE books SET title = %s, author = %s, category = %s,
-                              description = %s, price = %s, book_condition = %s, status = %s
+                              description = %s, price = %s, `condition` = %s, status = %s
                 WHERE id = %s AND user_id = %s
             ''', (title, author, category, description, price, condition, status, book_id, user_id))
             conn.commit()
@@ -559,10 +661,60 @@ def edit_book(book_id):
             return redirect(url_for('dashboard'))
 
         except Exception as e:
+            conn.rollback()
+            cursor.close()
+            conn.close()
             flash(f'Error updating book: {str(e)}', 'danger')
             return redirect(url_for('edit_book', book_id=book_id))
 
     return render_template('edit_book.html', book=book)
+
+@app.route('/book/<int:book_id>/buy', methods=['POST'])
+@login_required
+def buy_book(book_id):
+    """Handle book purchase"""
+    user_id = session.get('user_id')
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Get book details
+    cursor.execute('SELECT * FROM books WHERE id = %s AND status = "Available"', (book_id,))
+    book = cursor.fetchone()
+
+    if not book:
+        cursor.close()
+        conn.close()
+        flash('Book not found or not available!', 'danger')
+        return redirect(url_for('browse_books'))
+
+    if book['user_id'] == user_id:
+        cursor.close()
+        conn.close()
+        flash('You cannot buy your own book!', 'danger')
+        return redirect(url_for('book_detail', book_id=book_id))
+
+    try:
+        # Create transaction
+        cursor.execute('''
+            INSERT INTO transactions (buyer_id, seller_id, book_id, price_paid, status)
+            VALUES (%s, %s, %s, %s, 'Pending')
+        ''', (user_id, book['user_id'], book_id, book['price']))
+
+        # Update book status
+        cursor.execute('UPDATE books SET status = "Sold" WHERE id = %s', (book_id,))
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        flash('Purchase initiated! Contact the seller to complete the transaction.', 'success')
+        return redirect(url_for('conversation', other_user_id=book['user_id']))
+
+    except Exception as e:
+        conn.rollback()
+        flash(f'Error processing purchase: {str(e)}', 'danger')
+        return redirect(url_for('book_detail', book_id=book_id))
 
 @app.route('/book/<int:book_id>/delete', methods=['POST'])
 @login_required
@@ -570,26 +722,25 @@ def delete_book(book_id):
     """Delete book listing"""
     user_id = session.get('user_id')
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-
-
-    cursor.execute('SELECT book_image FROM books WHERE id = %s AND user_id = %s', (book_id, user_id))
-    book = cursor.fetchone()
-
-    if not book:
-        cursor.close()
-        conn.close()
-        flash('Book not found or unauthorized!', 'danger')
-        return redirect(url_for('dashboard'))
+    cursor = conn.cursor()
 
     try:
+        cursor.execute('SELECT book_image FROM books WHERE id = %s AND user_id = %s', (book_id, user_id))
+        book = cursor.fetchone()
 
+        if not book:
+            cursor.close()
+            conn.close()
+            flash('Book not found or unauthorized!', 'danger')
+            return redirect(url_for('dashboard'))
+
+        # Delete book image if exists
         if book['book_image']:
             image_path = os.path.join(app.config['UPLOAD_FOLDER'], book['book_image'])
             if os.path.exists(image_path):
                 os.remove(image_path)
 
-
+        # Delete book from database
         cursor.execute('DELETE FROM books WHERE id = %s AND user_id = %s', (book_id, user_id))
         conn.commit()
         cursor.close()
@@ -597,10 +748,12 @@ def delete_book(book_id):
 
         flash('Book deleted successfully!', 'success')
     except Exception as e:
+        conn.rollback()
+        cursor.close()
+        conn.close()
         flash(f'Error deleting book: {str(e)}', 'danger')
 
     return redirect(url_for('dashboard'))
-
 
 
 
@@ -669,6 +822,108 @@ def remove_from_wishlist(book_id):
 
 
 
+@app.route('/messages')
+@login_required
+def messages():
+    """View user's messages"""
+    user_id = session.get('user_id')
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        # Get conversations (unique sender/receiver pairs)
+        cursor.execute('''
+            SELECT DISTINCT
+                CASE WHEN m.sender_id = %s THEN m.receiver_id ELSE m.sender_id END as other_user_id,
+                u.full_name,
+                MAX(m.sent_at) as last_message_time,
+                SUM(CASE WHEN m.is_read = FALSE AND m.receiver_id = %s THEN 1 ELSE 0 END) as unread_count
+            FROM messages m
+            JOIN users u ON u.id = CASE WHEN m.sender_id = %s THEN m.receiver_id ELSE m.sender_id END
+            WHERE m.sender_id = %s OR m.receiver_id = %s
+            GROUP BY other_user_id, u.full_name
+            ORDER BY last_message_time DESC
+        ''', (user_id, user_id, user_id, user_id, user_id))
+        conversations = cursor.fetchall()
+    except Exception as e:
+        print(f"Database error: {e}")
+        conversations = []
+
+    cursor.close()
+    conn.close()
+
+    return render_template('messages.html', conversations=conversations)
+
+@app.route('/messages/<int:other_user_id>')
+@login_required
+def conversation(other_user_id):
+    """View conversation with a specific user"""
+    user_id = session.get('user_id')
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        # Mark messages as read
+        cursor.execute('''
+            UPDATE messages SET is_read = TRUE
+            WHERE sender_id = %s AND receiver_id = %s
+        ''', (other_user_id, user_id))
+        conn.commit()
+
+        # Get messages
+        cursor.execute('''
+            SELECT m.*, u_sender.full_name as sender_name, u_receiver.full_name as receiver_name
+            FROM messages m
+            JOIN users u_sender ON m.sender_id = u_sender.id
+            JOIN users u_receiver ON m.receiver_id = u_receiver.id
+            WHERE (sender_id = %s AND receiver_id = %s) OR (sender_id = %s AND receiver_id = %s)
+            ORDER BY sent_at ASC
+        ''', (user_id, other_user_id, other_user_id, user_id))
+        messages_list = cursor.fetchall()
+
+        # Get other user info
+        cursor.execute('SELECT full_name FROM users WHERE id = %s', (other_user_id,))
+        other_user = cursor.fetchone()
+    except Exception as e:
+        print(f"Database error: {e}")
+        messages_list = []
+        other_user = {'full_name': 'Unknown User'}
+
+    cursor.close()
+    conn.close()
+
+    return render_template('conversation.html', messages=messages_list, other_user=other_user, other_user_id=other_user_id)
+
+@app.route('/send_message', methods=['POST'])
+@login_required
+def send_message():
+    """Send a message"""
+    user_id = session.get('user_id')
+    receiver_id = request.form.get('receiver_id', type=int)
+    book_id = request.form.get('book_id', type=int)
+    message_text = request.form.get('message', '').strip()
+
+    if not receiver_id or not message_text:
+        return jsonify({'status': 'error', 'message': 'Invalid data'})
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute('''
+            INSERT INTO messages (sender_id, receiver_id, book_id, message)
+            VALUES (%s, %s, %s, %s)
+        ''', (user_id, receiver_id, book_id, message_text))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({'status': 'success', 'message': 'Message sent'})
+    except Exception as e:
+        print(f"Database error: {e}")
+        return jsonify({'status': 'error', 'message': 'Failed to send message'})
+
+
+
 @app.errorhandler(404)
 def not_found(error):
     """Handle 404 errors"""
@@ -689,7 +944,11 @@ def inject_user():
     user_id = session.get('user_id')
     user = None
     if user_id:
-        user = get_user_data(user_id)
+        try:
+            user = get_user_data(user_id)
+        except Exception as e:
+            print(f"Error injecting user: {e}")
+            user = None
     return dict(current_user=user)
 
 
@@ -699,6 +958,35 @@ def inject_user():
 if __name__ == '__main__':
     # ensure upload directory exists
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+    # Ensure messages table exists
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('SHOW TABLES LIKE "messages"')
+        if not cursor.fetchone():
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS messages (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    sender_id INT NOT NULL,
+                    receiver_id INT NOT NULL,
+                    book_id INT,
+                    message TEXT NOT NULL,
+                    sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    is_read BOOLEAN DEFAULT FALSE,
+                    FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+                    FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE,
+                    FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE,
+                    INDEX idx_sender_id (sender_id),
+                    INDEX idx_receiver_id (receiver_id),
+                    INDEX idx_book_id (book_id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ''')
+            conn.commit()
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print(f"Warning: Could not ensure messages table exists: {e}")
 
     port = int(os.environ.get('PORT', 5000))
     debug = os.environ.get('FLASK_DEBUG', 'true').lower() in ('1', 'true', 'yes')

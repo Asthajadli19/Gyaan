@@ -25,7 +25,7 @@
             </div>
             {% endif %}
             
-            <button class="w-full btn-gold py-4 rounded-2xl font-bold uppercase tracking-widest text-sm mb-3">
+            <button id="wishlist-btn" class="w-full btn-gold py-4 rounded-2xl font-bold uppercase tracking-widest text-sm mb-3" data-book-id="{{ book.id }}">
                 <i data-lucide="heart" class="w-4 h-4 inline mr-2"></i> Add to Wishlist
             </button>
             <button class="w-full py-4 rounded-2xl bg-white/5 border border-border hover:bg-white/10 font-bold uppercase tracking-widest text-sm transition-all">
@@ -47,6 +47,13 @@
                 <div class="py-6 border-y border-border">
                     <p class="text-5xl font-black text-accent mb-2">₹{{ "%.2f"|format(book.price) }}</p>
                     <p class="text-text-muted">Listed on {{ book.created_at.strftime('%B %d, %Y') }}</p>
+                    {% if current_user and current_user.id != book.seller_id %}
+                    <form method="POST" action="{{ url_for('buy_book', book_id=book.id) }}" class="mt-4">
+                        <button type="submit" class="w-full btn-gold py-3 rounded-2xl font-bold uppercase tracking-widest text-sm">
+                            <i data-lucide="shopping-cart" class="w-4 h-4 inline mr-2"></i> Buy Now
+                        </button>
+                    </form>
+                    {% endif %}
                 </div>
             </div>
 
@@ -93,7 +100,7 @@
                         </p>
                         <p class="text-sm text-text-muted">Member since {{ book.created_at.strftime('%B %Y') }}</p>
                     </div>
-                    <button class="btn-gold px-8 py-4 rounded-2xl font-bold uppercase tracking-widest text-sm">
+                    <button onclick="window.location.href='{{ url_for('conversation', other_user_id=book.seller_id) }}'" class="btn-gold px-8 py-4 rounded-2xl font-bold uppercase tracking-widest text-sm">
                         <i data-lucide="message-circle" class="w-4 h-4 inline mr-2"></i> Message Seller
                     </button>
                 </div>

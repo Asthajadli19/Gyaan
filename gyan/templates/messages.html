@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Messages - GyaanShelf{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-8 py-12">
+    <div class="flex items-center gap-2 text-sm text-text-muted mb-8">
+        <a href="{{ url_for('index') }}" class="hover:text-accent transition-colors">Home</a>
+        <i data-lucide="chevron-right" class="w-4 h-4"></i>
+        <span class="text-text-main">Messages</span>
+    </div>
+
+    <h1 class="text-4xl font-bold serif-title mb-8">Your Messages</h1>
+
+    {% if conversations %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for conv in conversations %}
+        <a href="{{ url_for('conversation', other_user_id=conv.other_user_id) }}" class="book-card p-6 rounded-2xl">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-bold">{{ conv.full_name }}</h3>
+                {% if conv.unread_count > 0 %}
+                <span class="bg-accent text-bg-deep px-2 py-1 rounded-full text-xs font-bold">{{ conv.unread_count }}</span>
+                {% endif %}
+            </div>
+            <p class="text-text-muted text-sm">Last message: {{ conv.last_message_time.strftime('%b %d, %Y') }}</p>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-20">
+        <i data-lucide="message-circle" class="w-24 h-24 text-text-muted/30 mx-auto mb-6"></i>
+        <h3 class="text-2xl font-bold serif-title mb-4">No Messages Yet</h3>
+        <p class="text-text-muted text-lg">Start a conversation by messaging a seller about their books!</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
